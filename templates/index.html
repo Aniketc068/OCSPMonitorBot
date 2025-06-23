@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>OCSP Bot Status</title>
+        <link rel="icon" href="https://www.managexindia.com/static/Lo.png" type="image/png">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: 'Poppins', sans-serif;
+                background-color: #0e0e10;
+                color: #ffffff;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+
+            .container {
+                background: #1a1a1d;
+                padding: 40px;
+                border-radius: 16px;
+                box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+                max-width: 720px;
+                width: 90%;
+                text-align: center;
+            }
+
+            .status {
+                display: inline-flex;
+                align-items: center;
+                gap: 12px;
+                background-color: #222225;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 18px;
+                box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+            }
+
+            .status img {
+                height: 24px;
+                width: auto;
+                border-radius: 4px;
+            }
+
+            .blink {
+                width: 18px;
+                height: 18px;
+                background-color: #00ff00;
+                border-radius: 50%;
+                animation: blinkAnimation 1.5s infinite;
+                box-shadow: 0 0 8px #00ff00;
+            }
+
+            @keyframes blinkAnimation {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0; }
+            }
+
+            h1 {
+                font-size: 28px;
+                margin-bottom: 16px;
+                color: #e0e0e0;
+            }
+
+            ol {
+                text-align: left;
+                margin: 0 auto 30px auto;
+                max-width: 500px;
+                font-size: 16px;
+                line-height: 1.8;
+                color: #d1d5db;
+                padding-left: 20px;
+            }
+
+            li::marker {
+                color: #8b5cf6;
+            }
+
+            a {
+                color: #c084fc;
+                text-decoration: none;
+                font-weight: 500;
+            }
+
+            a:hover {
+                text-decoration: underline;
+            }
+
+            .note {
+                font-size: 14px;
+                color: #aaaaff;
+                margin-top: 20px;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="status">
+                <div class="blink"></div> Service Running
+            </div>
+            <h1>How to Use the OCSP Certificate Bot</h1>
+            <ol>
+                <li>Click <a href="https://t.me/OCSP_CRL_bot" target="_blank">here</a> to open the OCSP Certificate Bot on Telegram</li>
+                <li>Type <strong>/start</strong> to begin</li>
+                <li>Click on the menu icon in the chat</li>
+                <li>Select the <strong>/checknow</strong> command</li>
+                <li>You'll get the latest certificate update immediately</li>
+            </ol>
+    
+            <!-- 🆕 Features Section -->
+            <h2 style="margin-top: 30px;">🔍 What This Bot Can Do</h2>
+            <ul style="text-align: left; max-width: 500px; margin: 0 auto 20px auto; font-size: 16px; line-height: 1.8; color: #d1d5db; padding-left: 20px;">
+                <li>✅ Verify CRL and OCSP status of DSC certificates</li>
+                <li>📎 Accepts both base64-encoded text and certificate files (.cer, .crt, .pem, .p7b)</li>
+                <li>⚠️ Automatically blocks spammers after 10 invalid attempts</li>
+                <li>🧠 Intelligent parsing of pasted or uploaded certificate data</li>
+                <li>📈 Tracks how many certificates have been checked</li>
+            </ul>
+    
+            <h2 style="margin-top: 30px;">📊 Total Certificates Checked: <span id="certCount">Loading...</span></h2>
+    
+            <div class="note">
+                ⚠️ This bot only checks CRL and OCSP status for Capricorn Identity Services Pvt. Ltd. (Certifying Authority).
+            </div>
+        </div>
+    </body>
+    
+    <script>
+        async function fetchCertCount() {
+            try {
+                const res = await fetch('/cert-count');
+                const data = await res.json();
+                document.getElementById('certCount').textContent = data.total;
+            } catch (e) {
+                document.getElementById('certCount').textContent = "Error";
+            }
+        }
+    
+        // Fetch every 5 seconds
+        fetchCertCount();
+        setInterval(fetchCertCount, 5000);
+    </script>
+    
+    </html>
