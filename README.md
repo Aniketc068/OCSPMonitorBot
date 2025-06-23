@@ -64,7 +64,7 @@ pip install -r requirements.txt
 ```
 ### 3. Run the application:
 ```cmd
-python PDF_Generator_v2.1.py
+python main.py
 ```
 
 ## 🔑 Required Environment Variables
