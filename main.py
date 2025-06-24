@@ -147,7 +147,35 @@ def main():
 
     port = int(os.environ.get("PORT", 5000))
     print(f"🌐 Flask status page running at http://0.0.0.0:{port}")
-    app.run(host='0.0.0.0', port=port)
+
+    system_platform = platform.system().lower()
+    
+    if system_platform == 'windows':
+        serve(app, host='0.0.0.0', port=port)
+    else:
+        # Linux/macOS: Use Gunicorn or fallback to app.run
+        try:
+            class GunicornApp(BaseApplication):
+                def __init__(self, app, options=None):
+                    self.options = options or {}
+                    self.application = app
+                    super().__init__()
+
+                def load_config(self):
+                    for key, value in self.options.items():
+                        self.cfg.set(key, value)
+
+                def load(self):
+                    return self.application
+
+            options = {
+                'bind': f'0.0.0.0:{port}',
+                'workers': 4
+            }
+            GunicornApp(app, options).run()
+        except ImportError:
+            print("Gunicorn not available. Falling back to Flask's development server.")
+            app.run(host='0.0.0.0', port=port)
 
 
 if __name__ == "__main__":
