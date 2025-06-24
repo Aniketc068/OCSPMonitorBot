@@ -1,5 +1,10 @@
 # 🔐 Certificate OCSP & CRL Checker Bot + API
 
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Flask](https://img.shields.io/badge/flask-%23000.svg?style=for-the-badge&logo=flask&logoColor=white)
+![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
+![Cryptography](https://img.shields.io/badge/cryptography-%237A1FA2.svg?style=for-the-badge&logo=cryptography&logoColor=white)
+
 This project provides a powerful Telegram bot and a RESTful API to check X.509 digital certificate validity, OCSP status, CRL updates, and more.
 
 - ✅ Supports `.cer`, `.cert`, `.pem` certificates
