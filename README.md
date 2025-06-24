@@ -5,6 +5,9 @@
 ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
 ![Cryptography](https://img.shields.io/badge/cryptography-%237A1FA2.svg?style=for-the-badge&logo=cryptography&logoColor=white)
 
+![App Flowchart](https://github.com/Aniketc068/OCSPMonitorBot/blob/main/flowchart.png)
+
+
 This project provides a powerful Telegram bot and a RESTful API to check X.509 digital certificate validity, OCSP status, CRL updates, and more.
 
 - ✅ Supports `.cer`, `.cert`, `.pem` certificates
@@ -147,7 +150,10 @@ Returns:
 - Flask  
 - python-telegram-bot (async)  
 - cryptography  
-- lxml / xml.etree.ElementTree  
+- lxml / xml.etree.ElementTree
+
+## License
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/Aniketc068/OCSPMonitorBot/blob/main/LICENSE)
 
 ## 🙋‍♂️ Developer
 
