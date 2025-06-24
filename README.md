@@ -67,7 +67,17 @@ source pdf/bin/activate
 ```cmd
 pip install -r requirements.txt
 ```
-### 3. Run the application:
+
+### 3. Important Changes in imports.py
+```cmd
+If you are using Windows, keep these imports as they are
+   from waitress import serve
+
+If you are using Linux or Mac, remove the waitress import above 
+and uncomment/use this import instead:
+  from gunicorn.app.base import BaseApplication
+```
+### 4. Run the application:
 ```cmd
 python main.py
 ```
