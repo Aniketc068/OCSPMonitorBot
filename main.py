@@ -249,13 +249,15 @@ def main():
     bot_thread.start()
 
     port = int(os.environ.get("PORT", 5000))
-    print(f"🌐 Flask status page running at http://0.0.0.0:{port}")
+    host = os.environ.get("HOST", "0.0.0.0")
+
+    print(f"🌐 Flask status page running at http://{host}:{port}")
 
     system_platform = platform.system().lower()
 
     if system_platform == 'windows':
         from waitress import serve
-        serve(app, host='0.0.0.0', port=port)
+        serve(app, host=host, port=port)
     else:
         try:
             from gunicorn.app.base import BaseApplication
@@ -274,14 +276,14 @@ def main():
                     return self.application
 
             options = {
-                'bind': f'0.0.0.0:{port}',
+                'bind': f'{host}:{port}',
                 'workers': 4
             }
             GunicornApp(app, options).run()
 
         except ImportError:
             print("Gunicorn not available. Falling back to Flask's development server.")
-            app.run(host='0.0.0.0', port=port)
+            app.run(host=host, port=port)
 
 
 if __name__ == "__main__":
