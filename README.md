@@ -80,9 +80,29 @@ If you are using Linux or Mac, remove the waitress import above
 and uncomment/use this import instead:
   from gunicorn.app.base import BaseApplication
 ```
-### 4. Run the application:
+### 4. Before Run the application:
+📌 What is MASTER_TOKEN?
+The MASTER_TOKEN is a secure authentication token used by the API to verify if the client requesting a new token is trusted.
+Only clients that provide the correct MASTER_TOKEN are issued valid short-lived access tokens for calling protected endpoints (like /api/certchecker).
+
+This mechanism prevents unauthorized access and abuse of the certificate validation API.
+
+⚙️ How to Generate the MASTER_TOKEN
+
+We provide a helper script: env_setup.py
+This script helps you generate a strong MASTER_TOKEN and creates a .env file that will be used by your application.
+
+NOTE: Please Genarate The Telegram Bot Token, User Chat-ID and Super Group Chat-ID
+
 ```cmd
-python main.py
+python env_setup.py For Windows
+python3 python env_setup.py For macOS/Linux
+```
+
+### 5. Then Run the application:
+```cmd
+python watcher.py For Windows
+python3 watcher.py For macOS/Linux
 ```
 
 ## 🔑 Required Environment Variables
@@ -92,6 +112,53 @@ TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_group_chat_id
 MONITOR_USER_ID=your_admin_chat_id
 ```
+
+## 🔑 How to Use MASTER_TOKEN to Get a Temporary Token
+Endpoint
+```http
+POST /api/get-token
+```
+
+Headers
+```http
+Content-Type: application/json   OR   application/xml
+
+```
+
+JSON Payload
+```json
+{
+  "auth_token": "Your_MASTER_TOKEN"
+}
+```
+XML Payload
+```xml
+<request>
+    <auth_token>Your_MASTER_TOKEN</auth_token>
+</request>
+```
+
+✅ Response
+If the auth_token is valid, you will receive a temporary token:
+
+JSON
+```json
+{
+  "token": "TEMPORARY_ACCESS_TOKEN"
+}
+```
+XML
+```xml
+<response>
+    <token>TEMPORARY_ACCESS_TOKEN</token>
+</response>
+```
+
+⚠️ This token is valid for 60 seconds and can only be used once.
+
+
+
+
 ## 🔗 API Documentation
 Endpoint
 ```bash
@@ -101,6 +168,7 @@ POST /api/certchecker
 Headers
 ```pgsql
 Content-Type: application/json OR application/xml
+Token: TEMPORARY_ACCESS_TOKEN
 
 ```
 
@@ -123,13 +191,17 @@ XML Payload
 ```
 
 ## ❌ Error Responses
+| Status | Message                                 | Description                                              |
+| ------ | --------------------------------------- | -------------------------------------------------------- |
+| 400    | Missing 'command' or 'data' field       | Required fields are not found in the request             |
+| 400    | Invalid command. Expected 'certchecker' | Wrong command value sent                                 |
+| 400    | Invalid base64 certificate data         | `data` field is not properly base64 encoded              |
+| 401    | Invalid master token                    | Provided master token is incorrect (in `/api/get-token`) |
+| 400    | Token already used                      | Access token was already consumed                        |
+| 400    | Token expired                           | Token was not used within 60 seconds                     |
+| 400    | Missing or invalid token                | Token is not passed in the header or not found           |
 
-| Error            | Message                                                                                                                                                          |
-|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Invalid base64   | Invalid base64 certificate data                                                                                                                                  |
-| Missing field    | Missing 'command' field or 'data' field                                                                                                                          |
-| Invalid command  | Expected 'certchecker'                                                                                                                                           |
-| Unsupported file | We only support .cer, .cert, .pem certificates in the API. To check .p7b/.p7c files, please use our Telegram bot @OCSP_CRL_bot.                                 |
+
 
 
 ## 📊 Realtime Status
