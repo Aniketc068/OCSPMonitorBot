@@ -1,21 +1,57 @@
-MIT License
+CUSTOM OPEN SOURCE LICENSE  
+Version 1.0, June 25, 2025  
 
-Copyright (c) 2025 Aniket chaturvedi
+Copyright (c) 2025 Aniket Chaturvedi  
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy  
+of this software and associated documentation files (the "Software"), to use  
+the Software internally for personal or organizational purposes without  
+the right to sell, distribute, or commercially exploit the Software.  
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+LIMITATIONS:  
+1. The Software may not be sold, licensed, or otherwise distributed for  
+   commercial purposes without express written permission from the copyright holder.  
+2. Any commercial use, including but not limited to:  
+   - Selling services based on this Software  
+   - Incorporating it into commercial products  
+   - White-labeling/rebranding solutions  
+   Requires payment of a 10% royalty fee of gross revenue to Aniket Chaturvedi.  
+3. Any derivative works must retain this license and copyright notice.  
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+RIGHTS GRANTED:  
+- Free internal use within organizations  
+- Modification rights for self-use  
+- Non-commercial distribution with attribution  
+
+ROYALTY PAYMENT TERMS:  
+- Due within 30 days of commercial deployment  
+- Quarterly reporting of usage metrics required  
+- Payment methods: Bank transfer/Crypto (details in separate agreement)  
+
+TERMINATION:  
+Automatic termination for:  
+- Unpaid royalties beyond 45 days  
+- License violation without remediation within 30 days  
+
+LIMITED WARRANTY & DISCLAIMER:
+1. The Author guarantees this software will function as documented when used with specified configurations
+2. For any verified defects, the Author will provide:
+   - Bug fixes within 30 days of reporting
+   - Workarounds for critical issues within 7 business days
+3. Warranty claims must be submitted in writing to chaturvedianiket007@gmail.com
+4. This warranty covers only unmodified software used as per documentation
+5. The Author shall not be liable for:
+   - Damages from unauthorized modifications
+   - Incidental/consequential damages
+   - Issues arising from third-party integrations
+
+GOVERNING LAW & DISPUTES:
+1. This agreement shall be governed by Indian law
+2. Exclusive jurisdiction: Saket Courts, New Delhi
+3. Mediation attempt required before litigation
+4. Prevailing party entitled to legal fees
+
+CONTACT & SUPPORT:
+Primary Contact: chaturvedianiket007@gmail.com
+Business Hours: 10AM-6PM IST (Mon-Fri)
+Response SLA: 48 hours for warranty claims
