@@ -3,12 +3,18 @@ from imports import *
 
 def parse_html_output(html_text: str) -> dict:
     """Extracts structured certificate fields from the HTML string returned by check_certificate()."""
+
     def extract(label, text):
         match = re.search(rf"<b>{re.escape(label)}:</b>\s*(.*?)\n", text)
         return match.group(1).strip() if match else ""
 
     def extract_code(label, text):
         match = re.search(rf"<b>{re.escape(label)}:</b>\s*<code>(.*?)</code>", text)
+        return match.group(1).strip() if match else ""
+
+    def extract_ocsp(text):
+        # Match OCSP status like: ❌ OCSP Status: REVOKED at 2024-12-23 06:43:20 UTC+05:30
+        match = re.search(r"OCSP Status:\s*(.*?)(?:\n|$)", text)
         return match.group(1).strip() if match else ""
 
     return {
@@ -21,5 +27,5 @@ def parse_html_output(html_text: str) -> dict:
         "crl_url": extract_code("CRL URL", html_text),
         "crl_last_update": extract("CRL Last Update", html_text),
         "crl_next_update": extract("CRL Next Update", html_text),
-        "ocsp_status": extract("OCSP Status", html_text)
+        "ocsp_status": extract_ocsp(html_text),
     }
