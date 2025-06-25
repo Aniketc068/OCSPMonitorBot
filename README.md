@@ -12,7 +12,7 @@ This project provides a powerful Telegram bot and a RESTful API to check X.509 d
 
 - ✅ Supports `.cer`, `.cert`, `.pem` certificates
 - 🚫 Blocks spam users automatically
-- 🔁 Real-time OCSP monitoring for Capricorn DSC
+- 🔁 Real-time OCSP monitoring for Capricorn CA (Capricorn Identity Services Pvt. Ltd.) DSC
 - ⚙️ JSON & XML API support
 - 💬 Telegram Bot: [@OCSP_CRL_bot](https://t.me/OCSP_CRL_bot)
 
