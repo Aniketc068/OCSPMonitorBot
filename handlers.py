@@ -12,6 +12,10 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
         except:
             pass
         return
+    
+    # 🚫 Reject if not in a private chat
+    if update.message.chat.type != "private":
+        return
 
     try:
         cert_bytes = None
@@ -61,16 +65,25 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
                     await update.message.reply_text("❌ Could not parse any certificate from the .p7b file.")
                     return
 
-                for cert in certs:
-                    cert_der = cert.public_bytes(serialization.Encoding.DER)
-                    result = check_certificate(cert_der)
-                    increment_certificate_counter()
-                    await context.bot.send_message(
-                        chat_id=update.message.chat_id,
-                        text=result,
-                        parse_mode="HTML",
-                        reply_to_message_id=update.message.message_id
-                    )
+                combined_results = []
+
+                for i, cert in enumerate(certs, start=1):
+                    try:
+                        cert_der = cert.public_bytes(serialization.Encoding.DER)
+                        result = check_certificate(cert_der)
+                        increment_certificate_counter()
+                        combined_results.append(f"<b>Certificate {i}:</b>\n{result}")
+                    except Exception as e:
+                        combined_results.append(f"<b>Certificate {i}:</b>\n❌ Error parsing certificate: <pre>{html.escape(str(e))}</pre>")
+
+                # Send a single combined message
+                final_output = "\n\n".join(combined_results)
+                await context.bot.send_message(
+                    chat_id=update.message.chat_id,
+                    text=final_output,
+                    parse_mode="HTML",
+                    reply_to_message_id=update.message.message_id
+                )
                 return  # ⛔ Don't process further; already done
 
 
