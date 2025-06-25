@@ -214,7 +214,7 @@ XML Payload
 - lxml / xml.etree.ElementTree
 
 ## License
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/Aniketc068/OCSPMonitorBot/blob/main/LICENSE)
+[![CUSTOM License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/Aniketc068/OCSPMonitorBot/blob/main/LICENSE)
 
 ## 🙋‍♂️ Developer
 
