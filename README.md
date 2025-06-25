@@ -101,8 +101,8 @@ python3 python env_setup.py For macOS/Linux
 
 ### 5. Then Run the application:
 ```cmd
-python watcher.py For Windows
-python3 watcher.py For macOS/Linux
+python main.py For Windows
+python3 main.py For macOS/Linux
 ```
 
 ## 🔑 Required Environment Variables
