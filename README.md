@@ -204,17 +204,7 @@ XML Payload
 
 
 
-## 📊 Realtime Status
 
-Visit:
-```bash
-GET /cert-count
-```
-Returns:
-```json
-{
-  "total": 1257
-}
 ```
 ## 🧪 Tech Stack
 
