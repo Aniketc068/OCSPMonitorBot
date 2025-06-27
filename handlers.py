@@ -27,26 +27,48 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
             # 🔄 Handle /changecert command via uploaded .pem file
             if update.message.caption and "/changecert" in update.message.caption.lower():
+                # ✅ Restrict to MONITOR_USER_ID
+                if update.message.from_user.id != MONITOR_USER_ID:
+                    await update.message.reply_text("❌ You are not authorized to use this command.")
+                    return
+
                 try:
-                    os.makedirs("pem", exist_ok=True)
-                    new_path = os.path.join("pem", "capricorn.pem")
+                    pem_dir = "pem"
+                    os.makedirs(pem_dir, exist_ok=True)
 
-                    # 🔥 Remove old certificate if exists
-                    if os.path.exists(new_path):
-                        os.remove(new_path)
+                    # 🧹 Delete all existing .pem files in the directory
+                    for fname in os.listdir(pem_dir):
+                        if fname.endswith(".pem"):
+                            try:
+                                os.remove(os.path.join(pem_dir, fname))
+                            except Exception as e:
+                                print(f"⚠️ Failed to delete {fname}: {e}")
 
+                    # 💾 Save the new certificate
+                    new_path = os.path.join(pem_dir, "capricorn.pem")
                     with open(new_path, "wb") as f:
                         f.write(cert_bytes)
 
                     await update.message.reply_text("✅ New Capricorn certificate has been updated successfully.")
+
                 except Exception as e:
-                    await update.message.reply_text(f"❌ Failed to update Capricorn certificate:\n<pre>{html.escape(str(e))}</pre>", parse_mode="HTML")
-                return  # 🚫 Don't proceed further
+                    await update.message.reply_text(
+                        f"❌ Failed to update Capricorn certificate:\n<pre>{html.escape(str(e))}</pre>",
+                        parse_mode="HTML"
+                    )
+                return  # 🚫 Stop further processing
+            
+            
 
             if update.message.document.file_name.endswith(".p7b") or update.message.document.file_name.endswith(".p7c"):
             
 
                 certs = []
+
+                 # ⏳ Notify user that processing will take time
+                waiting_msg = await update.message.reply_text(
+                    "⏳ Please wait... This file may contain multiple certificates and can take some time to process."
+                )
                 try:
                     # Try loading PKCS7 as DER, suppressing BER fallback warning
                     with warnings.catch_warnings():
@@ -62,8 +84,49 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
                 if not certs:
+                    await waiting_msg.delete()
                     await update.message.reply_text("❌ Could not parse any certificate from the .p7b file.")
                     return
+                
+
+                # ⚙️ If caption has /pem, return PEMs first
+                if update.message.caption and "/pem" in update.message.caption.lower():
+                    try:
+                        zip_buffer = io.BytesIO()
+                        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_mem:
+                            for cert in certs:
+                                try:
+                                    cn_attr = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+                                    cn = cn_attr[0].value if cn_attr else "converted_cert"
+                                    filename = f"{cn}.pem"
+                                    pem_bytes = cert.public_bytes(serialization.Encoding.PEM)
+                                    zip_mem.writestr(filename, pem_bytes)
+                                except Exception as e:
+                                    print(f"❌ Error converting one of the certificates: {e}")
+                                    continue
+
+                        zip_buffer.seek(0)
+                        original_filename = update.message.document.file_name.rsplit(".", 1)[0]
+                        zip_filename = f"{original_filename}.zip"
+
+                        await context.bot.send_document(
+                            chat_id=update.message.chat_id,
+                            document=zip_buffer,
+                            filename=zip_filename,
+                            caption=f"✅ Extracted and zipped PEMs from <code>{update.message.document.file_name}</code>",
+                            parse_mode="HTML",
+                            reply_to_message_id=update.message.message_id
+                        )
+
+                    except Exception as e:
+                        await update.message.reply_text(
+                            f"❌ Error while creating zip:\n<pre>{html.escape(str(e))}</pre>",
+                            parse_mode="HTML"
+                        )
+
+                    await waiting_msg.delete()
+                    return  # 🚫 Skip further processing
+
 
                 combined_results = []
 
@@ -84,7 +147,70 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
                     parse_mode="HTML",
                     reply_to_message_id=update.message.message_id
                 )
-                return  # ⛔ Don't process further; already done
+                # ✅ Delete the "please wait" message after sending response
+                try:
+                    await waiting_msg.delete()
+                except Exception as e:
+                    print(f"⚠️ Failed to delete waiting message: {e}")
+
+                return  # ⛔ Don't process further
+            
+            
+            
+
+            # 🔄 Convert to PEM if caption contains '/pem'
+            if update.message.caption and "/pem" in update.message.caption.lower():
+                try:
+                    cert = None
+                    try:
+                        # Try DER first
+                        cert = x509.load_der_x509_certificate(cert_bytes, default_backend())
+                    except Exception:
+                        try:
+                            # Try PEM format
+                            decoded_text = cert_bytes.decode(errors="ignore")
+                            if "-----BEGIN CERTIFICATE-----" not in decoded_text:
+                                # Add missing PEM headers if not present
+                                cleaned = base64.b64decode(cert_bytes)
+                                pem_candidate = (
+                                    b"-----BEGIN CERTIFICATE-----\n"
+                                    + base64.encodebytes(cleaned)
+                                    + b"-----END CERTIFICATE-----\n"
+                                )
+                                cert = x509.load_pem_x509_certificate(pem_candidate, default_backend())
+                            else:
+                                cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
+                        except Exception:
+                            cert = None
+
+                    if cert is None:
+                        await update.message.reply_text("❌ Unable to parse certificate to convert to PEM.")
+                        return
+
+                    # Get CN for filename
+                    subject = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+                    cn = subject[0].value if subject else "converted_cert"
+                    filename = f"{cn}.pem"
+
+                    # Export as proper PEM
+                    pem_data = cert.public_bytes(serialization.Encoding.PEM)
+
+                    # 📤 Send PEM file
+                    await context.bot.send_document(
+                        chat_id=update.message.chat_id,
+                        document=io.BytesIO(pem_data),
+                        filename=filename,
+                        caption=f"✅ Converted to PEM format as <code>{filename}</code>",
+                        parse_mode="HTML",
+                        reply_to_message_id=update.message.message_id
+                    )
+                    return
+                except Exception as e:
+                    await update.message.reply_text(
+                        f"❌ Failed to convert certificate to proper PEM:\n<pre>{html.escape(str(e))}</pre>",
+                        parse_mode="HTML"
+                    )
+                    return
 
 
         elif update.message.text:
