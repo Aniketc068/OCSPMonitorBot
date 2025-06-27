@@ -11,6 +11,10 @@
 This project provides a powerful Telegram bot and a RESTful API to check X.509 digital certificate validity, OCSP status, CRL updates, and more.
 
 - ✅ Supports `.cer`, `.cert`, `.pem` certificates
+- 📥 Auto-converts .der, .cer, .p7b to .pem format directly in chat
+- 🛠️ Fixes malformed .pem files by adding missing headers automatically
+- 📦 Extracts certificates from .p7b/.p7c and sends .zip of .pem files
+- 👨‍💼 Capricorn .pem certificate can be updated via /changecert (admin-only)
 - 🚫 Blocks spam users automatically
 - 🔁 Real-time OCSP monitoring for Capricorn CA (Capricorn Identity Services Pvt. Ltd.) DSC
 - ⚙️ JSON & XML API support
@@ -23,12 +27,18 @@ This project provides a powerful Telegram bot and a RESTful API to check X.509 d
 ### Telegram Bot (`@OCSP_CRL_bot`)
 - Upload a certificate file or paste base64 string
 - Auto-detect `.pem`, `.der`, and even `.p7b` files
+- 🆕 Convert any uploaded certificate to .pem format using /pem caption
+- 🆕 Automatically fixes malformed .pem uploads missing headers
+- 🆕 Extracts certificates from .p7b/.p7c and returns .zip with individual .pem files
+- 🆕 /changecert command to update Capricorn .pem certificate from Telegram directly (admin only)
 - Auto-warns and blocks spammers after 10 invalid attempts
 - Admin panel to unblock users
 - Live monitoring of Capricorn `.pem` OCSP status
 - ⏰ Sends **OCSP failure alerts** to your group only **once per hour** to prevent spam
 - 🧹 Automatically **deletes the alert message after 5 minutes**
 - 👮‍♂️ Requires **Admin Rights** in the group to send and delete messages
+
+  
 ### Flask API (`/api/certchecker`)
 - Accepts `POST` requests with JSON or XML
 - Validates certificate format
