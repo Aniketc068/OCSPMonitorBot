@@ -13,7 +13,7 @@ This project provides a powerful Telegram bot and a RESTful API to check X.509 d
 - ✅ Supports `.cer`, `.cert`, `.pem` certificates
 - 📥 Auto-converts .der, .cer, .p7b to .pem format directly in chat
 - 🛠️ Fixes malformed .pem files by adding missing headers automatically
-- 📦 Extracts certificates from .p7b/.p7c and sends .zip of .pem files
+- 📦 Extracts certificates from .p7b/.p7c and sends .zip of .pem files using /pem with file description
 - 👨‍💼 Capricorn .pem certificate can be updated via /changecert (admin-only)
 - 🚫 Blocks spam users automatically
 - 🔁 Real-time OCSP monitoring for Capricorn CA (Capricorn Identity Services Pvt. Ltd.) DSC
