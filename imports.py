@@ -46,7 +46,7 @@ from cert_utils import get_ocsp_url1, get_crl_url1, get_issuer_cert1, check_ocsp
 from flask import Flask, jsonify, render_template, request, Response
 import asyncio
 import threading
-from handlers import handle_certificate, handle_unblock_callback, monitor_capricorn_certificate
+from handlers import handle_certificate, handle_unblock_callback, monitor_capricorn_certificate, handle_cert_convert_callback
 import base64
 import xml.etree.ElementTree as ET
 from parse import parse_html_output
