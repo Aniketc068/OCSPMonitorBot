@@ -27,10 +27,11 @@ This project provides a powerful Telegram bot and a RESTful API to check X.509 d
 ### Telegram Bot (`@OCSP_CRL_bot`)
 - Upload a certificate file or paste base64 string
 - Auto-detect `.pem`, `.der`, and even `.p7b` files
-- 🆕 Convert any uploaded certificate to .pem format using /pem caption
-- 🆕 Automatically fixes malformed .pem uploads missing headers
-- 🆕 Extracts certificates from .p7b/.p7c and returns .zip with individual .pem files
-- 🆕 /changecert command to update Capricorn .pem certificate from Telegram directly (admin only)
+- Convert any uploaded certificate to .pem format using /pem caption
+- Automatically fixes malformed .pem uploads missing headers
+- 🆕 Extracts certificates from .p7b/.p7c and returns .zip with individual .pem files using `/pem` in file caption
+- /changecert command to update Capricorn .pem certificate from Telegram directly (admin only)
+- 🆕 Convert `.pem` or `.p7b/.p7c` files to .cer / .der / base64 format using `/cert` in caption and get format options via inline buttons
 - Auto-warns and blocks spammers after 10 invalid attempts
 - Admin panel to unblock users
 - Live monitoring of Capricorn `.pem` OCSP status
