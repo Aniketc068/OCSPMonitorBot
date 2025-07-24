@@ -1,5 +1,115 @@
 from imports import *
 
+async def handle_cert_convert_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("🛠️ Callback triggered:", update.callback_query.data)
+
+    query = update.callback_query
+    await query.answer()  # Required to acknowledge the click
+
+    choice = query.data.replace("cert_convert_", "")
+
+    # Check if P7B certs are stored
+    is_p7b = context.user_data.get("is_p7b", False)
+    cert_list = context.user_data.get("certs_list")
+
+    if is_p7b and cert_list:
+        # 🔁 Convert all P7B certs and zip
+        try:
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_mem:
+                for cert_bytes in cert_list:
+                    try:
+                        cert = x509.load_der_x509_certificate(cert_bytes, default_backend())
+                        subject = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+                        cn = subject[0].value if subject else "converted_cert"
+
+                        if choice == "cer":
+                            file_bytes = cert.public_bytes(serialization.Encoding.PEM)
+                            filename = f"{cn}.cer"
+                        elif choice == "der":
+                            file_bytes = cert.public_bytes(serialization.Encoding.DER)
+                            filename = f"{cn}.der"
+                        elif choice == "base64":
+                            base64_str = base64.b64encode(cert.public_bytes(serialization.Encoding.DER)).decode()
+                            file_bytes = base64_str.encode()
+                            filename = f"{cn}_base64.txt"
+                        else:
+                            continue
+
+                        zip_mem.writestr(filename, file_bytes)
+
+                    except Exception as e:
+                        print(f"⚠️ Error converting one cert: {e}")
+                        continue
+
+            zip_buffer.seek(0)
+            await context.bot.send_document(
+                chat_id=query.message.chat_id,
+                document=zip_buffer,
+                filename="converted_certificates.zip",
+                caption=f"✅ All P7B certificates converted to <code>{choice.upper()}</code> and zipped.",
+                parse_mode="HTML"
+            )
+
+            # ✅ Clear memory after use
+            context.user_data.pop("certs_list", None)
+            context.user_data.pop("is_p7b", None)
+
+            await query.edit_message_text("✅ All P7B certificates converted and sent.")
+            return
+
+        except Exception as e:
+            print(f"❌ Error during P7B conversion: {e}")
+            await query.edit_message_text("❌ Failed to convert P7B certificates.")
+            return
+
+    # 🔹 Else handle regular PEM certificate
+    cert_bytes = context.user_data.get("cert_bytes")
+    cn = context.user_data.get("cn_name", "converted_cert")
+
+    if not cert_bytes:
+        await query.edit_message_text("❌ No certificate found. Please resend using /cert.")
+        return
+
+    try:
+        cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
+    except Exception:
+        await query.edit_message_text("❌ Failed to parse stored certificate.")
+        return
+
+    try:
+        if choice == "cer":
+            filename = f"{cn}.cer"
+            file_bytes = cert.public_bytes(serialization.Encoding.PEM)
+        elif choice == "der":
+            filename = f"{cn}.der"
+            file_bytes = cert.public_bytes(serialization.Encoding.DER)
+        elif choice == "base64":
+            der_bytes = cert.public_bytes(serialization.Encoding.DER)
+            base64_str = base64.b64encode(der_bytes).decode()
+            file_bytes = base64_str.encode()
+            filename = f"{cn}_base64.txt"
+        else:
+            await query.edit_message_text("❌ Invalid conversion choice.")
+            return
+
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=io.BytesIO(file_bytes),
+            filename=filename,
+            caption=f"✅ Converted as <code>{filename}</code>",
+            parse_mode="HTML"
+        )
+
+        await query.edit_message_text("✅ Certificate converted and sent.")
+        
+    except Exception as e:
+        print(f"❌ Conversion error: {e}")
+        await query.edit_message_text("❌ Failed to convert certificate.")
+
+
+
+
 
 async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -49,7 +159,7 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
                     with open(new_path, "wb") as f:
                         f.write(cert_bytes)
 
-                    await update.message.reply_text("✅ New Capricorn certificate has been updated successfully.")
+                    await update.message.reply_text("✅ New certificate has been updated successfully for live checking ocsp.")
 
                 except Exception as e:
                     await update.message.reply_text(
@@ -126,6 +236,37 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
                     await waiting_msg.delete()
                     return  # 🚫 Skip further processing
+                
+
+                if update.message.caption and "/cert" in update.message.caption.lower():
+                    if not certs:
+                        await waiting_msg.delete()
+                        await update.message.reply_text("❌ No certificate found inside the .p7b/.p7c file.")
+                        return
+
+                    context.user_data["certs_list"] = [cert.public_bytes(serialization.Encoding.DER) for cert in certs]
+                    context.user_data["is_p7b"] = True
+
+                    # ✅ Delete the waiting message before sending the buttons
+                    try:
+                        await waiting_msg.delete()
+                    except Exception as e:
+                        print(f"⚠️ Could not delete waiting message (cert): {e}")
+
+                    await update.message.reply_text(
+                        "✅ Extracted certificates from .p7b.\nChoose format to convert:",
+                        reply_markup=InlineKeyboardMarkup([
+                            [
+                                InlineKeyboardButton("🔹 .cer (PEM)", callback_data="cert_convert_cer"),
+                                InlineKeyboardButton("🔸 .der", callback_data="cert_convert_der"),
+                            ],
+                            [
+                                InlineKeyboardButton("📄 Base64", callback_data="cert_convert_base64")
+                            ]
+                        ])
+                    )
+                    return
+
 
 
                 combined_results = []
@@ -211,7 +352,41 @@ async def handle_certificate(update: Update, context: ContextTypes.DEFAULT_TYPE)
                         parse_mode="HTML"
                     )
                     return
+                
 
+            if update.message.caption and "/cert" in update.message.caption.lower():
+                try:
+                    cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
+                except Exception:
+                    await update.message.reply_text("❌ Invalid PEM certificate.")
+                    return
+
+                # Get CN for later use
+                subject = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+                cn = subject[0].value if subject else "converted_cert"
+
+                # 🧠 Store cert in memory (to convert after button press)
+                context.user_data["cert_bytes"] = cert_bytes
+                context.user_data["cn_name"] = cn
+
+                # ⬇️ Show format options to user
+                keyboard = InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("🔹 .cer (PEM)", callback_data="cert_convert_cer"),
+                        InlineKeyboardButton("🔸 .der", callback_data="cert_convert_der"),
+                    ],
+                    [
+                        InlineKeyboardButton("📄 Base64", callback_data="cert_convert_base64")
+                    ]
+                ])
+
+                await update.message.reply_text(
+                    f"✅ Certificate parsed.\nChoose format to convert:",
+                    reply_markup=keyboard
+                )
+                return
+
+                
 
         elif update.message.text:
             text = update.message.text.strip()
