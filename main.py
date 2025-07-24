@@ -231,8 +231,13 @@ def create_error_response(message: str, response_type: str):
 
 def main():
     telegram_app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    telegram_app.add_handler(MessageHandler(filters.Document.ALL | filters.TEXT, handle_certificate))
+    telegram_app.add_handler(CallbackQueryHandler(handle_cert_convert_callback, pattern=r"^cert_convert_"))
     telegram_app.add_handler(CallbackQueryHandler(handle_unblock_callback))
+    telegram_app.add_handler(MessageHandler(filters.Document.ALL | filters.TEXT, handle_certificate))
+    
+    
+
+    
 
     print("✅ Telegram Bot is starting via polling...")
 
