@@ -49,7 +49,7 @@ This project provides a powerful Telegram bot and a RESTful API to check X.509 d
 - Bot auto-saves any group it's added to
 - Auto-removes chat ID when kicked or removed
 - Keeps `.env` updated live
-- Admin gets a notification when bot is added or removed from any group
+- Admin gets a notification when bot is removed from any group
 
 
   
