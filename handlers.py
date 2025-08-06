@@ -1,4 +1,34 @@
 from imports import *
+from telegram.error import Forbidden
+
+
+ENV_PATH = ".env"
+monitor_user_id = os.getenv("MONITOR_USER_ID")
+
+def append_chat_id_to_env(new_chat_id: str):
+    load_dotenv(ENV_PATH)
+    existing_ids = os.getenv("TELEGRAM_CHAT_ID", "")
+    chat_ids = set(existing_ids.split(",")) if existing_ids else set()
+
+    if new_chat_id not in chat_ids:
+        chat_ids.add(new_chat_id)
+        new_value = ",".join(chat_ids)
+        set_key(ENV_PATH, "TELEGRAM_CHAT_ID", new_value)
+        os.environ["TELEGRAM_CHAT_ID"] = new_value  # update current runtime too
+        print(f"✅ Added new chat ID: {new_chat_id}")
+
+
+def remove_chat_id_from_env(chat_id_to_remove: str):
+    load_dotenv(ENV_PATH)
+    existing_ids = os.getenv("TELEGRAM_CHAT_ID", "")
+    chat_ids = set(existing_ids.split(",")) if existing_ids else set()
+
+    if chat_id_to_remove in chat_ids:
+        chat_ids.remove(chat_id_to_remove)
+        new_value = ",".join(chat_ids)
+        set_key(ENV_PATH, "TELEGRAM_CHAT_ID", new_value)
+        os.environ["TELEGRAM_CHAT_ID"] = new_value
+        print(f"🗑️ Removed invalid chat ID: {chat_id_to_remove}")
 
 async def handle_cert_convert_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print("🛠️ Callback triggered:", update.callback_query.data)
@@ -545,10 +575,19 @@ async def monitor_capricorn_certificate(bot: Bot):
     global last_ocsp_alert_time, last_ocsp_message_id
 
     cert_path = os.path.join("pem", "capricorn.pem")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    last_env_load_time = None
+    chat_ids = []
 
     while True:
         try:
+            # 🔁 Reload .env every 5 minutes to get new chat IDs
+            now = datetime.now()
+            if last_env_load_time is None or (now - last_env_load_time).seconds > 300:
+                load_dotenv()
+                chat_ids = os.getenv("TELEGRAM_CHAT_ID", "").split(",")
+                last_env_load_time = now
+                print(f"🔄 Refreshed TELEGRAM_CHAT_ID: {chat_ids}")
+
             if not os.path.exists(cert_path):
                 print("⏳ Capricorn certificate not found. Waiting for upload...")
                 await asyncio.sleep(10)
@@ -568,42 +607,112 @@ async def monitor_capricorn_certificate(bot: Bot):
             success, message, ocsp_url = check_ocsp(cert, issuer_cert)
 
             if success:
-                last_ocsp_alert_time = None  # Reset
+                last_ocsp_alert_time = None  # Reset alert timer
             else:
-                now = datetime.now(timezone.utc)
+                now_utc = datetime.now(timezone.utc)
 
-                if last_ocsp_alert_time is None or now - last_ocsp_alert_time > timedelta(hours=1):
-                    # Escape message & URL for Telegram HTML
+                if last_ocsp_alert_time is None or now_utc - last_ocsp_alert_time > timedelta(hours=1):
                     escaped_message = html.escape(message)
                     escaped_ocsp_url = html.escape(ocsp_url or 'N/A')
 
-                    msg = await bot.send_message(
-                        chat_id=chat_id,
-                        text=(
-                            "🚨 <b>Certificate Status Check Failed</b>\n\n"
-                            "We were unable to verify the certificate's current status.\n"
-                            "This may be due to a network issue or the server not responding.\n\n"
-                            f"❌ <b>Problem:</b> Unable to contact the OCSP verification server.\n"
-                            f"🌐 <b>OCSP URL:</b> <code>{escaped_ocsp_url}</code>\n\n"
-                            "⏳ We will retry automatically. If this keeps happening, please contact support."
-                        ),
-                        parse_mode="HTML"
-                    )
-
-                    last_ocsp_alert_time = now
-                    last_ocsp_message_id = msg.message_id
-
-                    # Delete the message after 5 minutes (300 seconds)
-                    async def delete_later(chat_id, message_id):
-                        await asyncio.sleep(300)
+                    for chat_id in chat_ids:
                         try:
-                            await bot.delete_message(chat_id=chat_id, message_id=message_id)
-                        except Exception as e:
-                            print(f"⚠️ Failed to delete message: {e}")
+                            msg = await bot.send_message(
+                                chat_id=int(chat_id),
+                                text=(
+                                    "🚨 <b>Certificate Status Check Failed</b>\n\n"
+                                    "We were unable to verify the certificate's current status.\n"
+                                    "This may be due to a network issue or the server not responding.\n\n"
+                                    f"❌ <b>Problem:</b> Unable to contact the OCSP verification server.\n"
+                                    f"🌐 <b>OCSP URL:</b> <code>{escaped_ocsp_url}</code>\n\n"
+                                    "⏳ We will retry automatically. If this keeps happening, please contact support."
+                                ),
+                                parse_mode="HTML"
+                            )
 
-                    asyncio.create_task(delete_later(chat_id, msg.message_id))
+                            last_ocsp_alert_time = now_utc
+                            last_ocsp_message_id = msg.message_id
+
+                            # 🧹 Auto-delete message after 5 minutes
+                            async def delete_later(chat_id, message_id):
+                                await asyncio.sleep(300)
+                                try:
+                                    await bot.delete_message(chat_id=chat_id, message_id=message_id)
+                                except Exception as e:
+                                    print(f"⚠️ Failed to delete message in {chat_id}: {e}")
+
+                            asyncio.create_task(delete_later(chat_id, msg.message_id))
+
+                        except Forbidden:
+                            print(f"⛔ Bot was removed from group {chat_id}")
+                            remove_chat_id_from_env(chat_id)
+
+                            if monitor_user_id:
+                                try:
+                                    await bot.send_message(
+                                        chat_id=int(monitor_user_id),
+                                        text=(
+                                            f"🚫 Bot was <b>removed</b> from group.\n"
+                                            f"🆔 <code>{chat_id}</code>\n\n"
+                                            "It has been removed from TELEGRAM_CHAT_ID list."
+                                        ),
+                                        parse_mode="HTML"
+                                    )
+                                except Exception as e:
+                                    print(f"⚠️ Failed to notify MONITOR_USER_ID: {e}")
+
+                        except Exception as e:
+                            print(f"❌ Failed to send alert to {chat_id}: {e}")
+
 
         except Exception as e:
             print(f"❌ Error during monitoring: {e}")
 
         await asyncio.sleep(5)
+
+
+async def handle_new_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+    if chat and chat.type in ["group", "supergroup"]:
+        chat_id = str(chat.id)
+        append_chat_id_to_env(chat_id)
+
+        group_name = html.escape(chat.title or "Unknown Group")
+
+        # Try sending welcome message
+        try:
+
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=(
+                    "<b>✅ Bot Successfully Added!</b>\n"
+                    "This group is now <b>registered</b> for <b>OCSP Certificate Expiry Alerts</b>. "
+                    "You will receive timely notifications to keep your certificates up to date.\n\n"
+                    "<b>📝 Note:</b>\n"
+                    "If you'd like the bot to automatically remove its messages after sending alerts, "
+                    "please make sure to <b>promote the bot as an admin</b> of this group."
+                ),
+                parse_mode="HTML"
+            )
+
+
+        except Forbidden:
+            print(f"⛔ Bot was kicked from group {chat_id} before it could send message.")
+            remove_chat_id_from_env(chat_id)
+
+            # Notify MONITOR_USER_ID
+            monitor_user_id = os.getenv("MONITOR_USER_ID")
+            if monitor_user_id:
+                try:
+                    await context.bot.send_message(
+                        chat_id=int(monitor_user_id),
+                        text=(
+                            f"🚫 Bot was <b>removed</b> from group right after joining.\n"
+                            f"🆔 <code>{chat_id}</code>\n"
+                            f"⛔ Group name: <b>{group_name}</b>\n\n"
+                            "The chat ID has been removed from .env"
+                        ),
+                        parse_mode="HTML"
+                    )
+                except Exception as e:
+                    print(f"⚠️ Could not notify monitor: {e}")
