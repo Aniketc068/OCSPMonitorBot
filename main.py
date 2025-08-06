@@ -234,6 +234,7 @@ def main():
     telegram_app.add_handler(CallbackQueryHandler(handle_cert_convert_callback, pattern=r"^cert_convert_"))
     telegram_app.add_handler(CallbackQueryHandler(handle_unblock_callback))
     telegram_app.add_handler(MessageHandler(filters.Document.ALL | filters.TEXT, handle_certificate))
+    telegram_app.add_handler(ChatMemberHandler(handle_new_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
     
     
 
