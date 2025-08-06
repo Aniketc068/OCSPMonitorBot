@@ -36,8 +36,21 @@ This project provides a powerful Telegram bot and a RESTful API to check X.509 d
 - Admin panel to unblock users
 - Live monitoring of Capricorn `.pem` OCSP status
 - ⏰ Sends **OCSP failure alerts** to your group only **once per hour** to prevent spam
+  - 🆕 Supports multiple groups automatically:
+  - When the bot is added to a group, its chat ID is saved automatically in .env
+  - When the bot is removed or kicked from a group, that chat ID is removed from .env
+- 🧹 OCSP alerts are auto-deleted after 5 minutes from each group
+- 👮 Admin (`MONITOR_USER_ID`) gets notified when bot is added to or removed from a group
 - 🧹 Automatically **deletes the alert message after 5 minutes**
 - 👮‍♂️ Requires **Admin Rights** in the group to send and delete messages
+
+### 🔄 Dynamic Group Management
+- No manual chat ID setup needed anymore
+- Bot auto-saves any group it's added to
+- Auto-removes chat ID when kicked or removed
+- Keeps `.env` updated live
+- Admin gets a notification when bot is added or removed from any group
+
 
   
 ### Flask API (`/api/certchecker`)
@@ -120,8 +133,8 @@ python3 main.py For macOS/Linux
 Create a .env file or export them manually:
 ```env
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_group_chat_id
-MONITOR_USER_ID=your_admin_chat_id
+TELEGRAM_CHAT_ID=-100xxxxxxxxxx,-100yyyyyyyyyy   # ✅ Bot supports multiple group chat IDs (comma-separated)
+MONITOR_USER_ID=your_admin_chat_id               # 🔔 Gets notified on group add/remove
 ```
 
 ## 🔑 How to Use MASTER_TOKEN to Get a Temporary Token
