@@ -1,6 +1,10 @@
 from imports import *
 import datetime
 
+# Disable SSL warnings when verify=False is used
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 def get_ocsp_url1(cert):
     try:
         aia = cert.extensions.get_extension_for_class(x509.AuthorityInformationAccess)
@@ -28,7 +32,7 @@ def get_issuer_cert1(cert):
         for access_desc in aia.value:
             if access_desc.access_method == AuthorityInformationAccessOID.CA_ISSUERS:
                 issuer_url = access_desc.access_location.value
-                r = requests.get(issuer_url, timeout=10)
+                r = requests.get(issuer_url, timeout=30, verify=False)
                 if r.status_code == 200:
                     try:
                         return x509.load_der_x509_certificate(r.content, default_backend())
@@ -50,7 +54,7 @@ def check_ocsp1(cert, issuer_cert):
 
     headers = {'Content-Type': 'application/ocsp-request'}
     try:
-        response = requests.post(ocsp_url, data=req_data, headers=headers, timeout=10)
+        response = requests.post(ocsp_url, data=req_data, headers=headers, timeout=30)
     except Exception as e:
         return f"❌ OCSP request failed: {str(e)}"
 
@@ -86,7 +90,7 @@ def check_crl1(cert):
         return "❌ <b>No CRL URL found in certificate.</b>"
 
     try:
-        r = requests.get(crl_url, timeout=10)
+        r = requests.get(crl_url, timeout=30)
         crl = x509.load_der_x509_crl(r.content, default_backend())
     except Exception as e:
         return f"❌ <b>Failed to load CRL:</b> {e}"
@@ -236,7 +240,7 @@ def get_issuer_cert(cert):
         for access_desc in aia.value:
             if access_desc.access_method == x509.AuthorityInformationAccessOID.CA_ISSUERS:
                 issuer_url = access_desc.access_location.value
-                r = requests.get(issuer_url)
+                r = requests.get(issuer_url, timeout=30, verify=False)
                 if r.status_code == 200:
                     try:
                         return x509.load_der_x509_certificate(r.content, default_backend())
@@ -295,3 +299,4 @@ def check_ocsp(cert, issuer_cert):
         return False, "Certificate status: UNKNOWN", ocsp_url
     else:
         return False, "Certificate status: Unable to determine", ocsp_url
+    
